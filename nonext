@@ -1,0 +1,83 @@
+#! /usr/bin/env bash
+
+# nonext, todo.sh plugin
+# lists projects that are present in projects file(s) but not in todo file
+# samuel.leason.snyder@gmail.com 
+
+################################################
+### CONFIG
+
+# Project file options
+
+NONEXT_DIR=$TODO_DIR
+nonext_prj_files=( 
+	"$NONEXT_DIR/projects.txt"
+)  # your project lists
+NONEXT_PRJ_EXT=".prj.txt" # filename extention for additional project files in todo dir, i.e. '.prj.txt' for 'work.prj.txt' 
+
+# Adding to todo.txt options
+
+NONEXT_ADD_TO_TODO_FILE=1 # if 0, don't add output to todo.txt
+NONEXT_DEFAULT_OUTPUT_MSG="Choose Next Action" # message added to output tasks, use "" for no message
+NONEXT_FILE_LABEL="file:" # label indicating correspohnding project file, i.e. "file:" for 'file:project.prj.txt'; "" for no label
+
+###
+################################################
+
+shift
+[[ $1 == "usage" ]] && echo "Usage: $TODO_SH nonext" && exit
+
+# glob files from suffix if globbing fails, remove extenension from array
+nonext_prj_files+=($NONEXT_DIR/*$NONEXT_PRJ_EXT)
+[[ ${nonext_prj_files[$(( ${#nonext_prj_files[@]}-1))]} = "$NONEXT_DIR/*$NONEXT_PRJ_EXT" ]] && nonext_prj_files[$(( ${#nonext_prj_files[@]}-1))]=""
+
+# clear output file
+cp /dev/null $NONEXT_OUTPUT_FILE
+
+# for each file, read line, grab prjs, check against todo file
+for file in ${nonext_prj_files[@]}; do
+	[[ ! -r $file ]] && echo "Cannot read $file" && continue
+	nonext_list=""
+	nonext_prj_count=0
+	nonext_nnxt_count=0
+	nonext_file_full_label=""
+	[[ ! -n  $NONEXT_FILE_LABEL ]] && nonext_file_full_label=" $NONEXT_FILE_LABEL${file##*/}"
+	while read; do
+
+		# get priority for this line
+		nonext_pri=$(echo "$REPLY" | grep -o "^[[:space:]]*([A-Z]) " | grep -o "[A-Z]")
+		[[ $nonext_pri ]] && nonext_pri="($nonext_pri) "
+
+		# get projects for this line
+		nonext_prjs=($(echo $REPLY | grep -o "[+][A-Za-z0-9._-]*"  ))
+		nonext_prj_count=$(($nonext_prj_count + ${#nonext_prjs[@]} ))
+
+		# check if each project exists in todo file
+		if [[ $nonext_prjs ]]; then
+			for i in $(seq 0 $((${#nonext_prjs[@]} -1)) ); do
+				[[ $(grep ${nonext_prjs[$i]} $TODO_FILE) ]] && nonext_prjs[$i]="" || nonext_nnxt_count=$(( $nonext_nnxt_count + 1))
+			done
+		fi
+
+		# if no prjs, erase priority to leave item blank, otherwise append to output file, todo list
+		if [[ ! ${nonext_prjs[@]} =~ [+] ]]; then nonext_pri=""
+		else
+			if [[ $NONEXT_USE_FILE_LABEL = 0 ]]; then
+				echo "$nonext_pri${nonext_prjs[@]}" >> $NONEXT_OUTPUT_FILE 
+			else
+				# output to todo list
+				[[ ! $NONEXT_ADD_TO_TODO_FILE = 0 ]] && "$TODO_FULL_SH" add "$nonext_pri${nonext_prjs[@]}${NONEXT_DEFAULT_OUTPUT_MSG:+ $NONEXT_DEFAULT_OUTPUT_MSG}$nonext_file_full_label"
+			fi
+		fi
+
+		# add prjs and a newline to list
+		nonext_list+="$nonext_pri${nonext_prjs[@]}
+" # <--newline
+	done <$file
+
+	# use _format to display prj list
+	echo "$nonext_list" |  _format 
+	echo --
+	echo $(getPrefix $file): $nonext_nnxt_count of $nonext_prj_count projects have no next action 
+done
+echo $NONEXT_OUTPUT_FILE updated
