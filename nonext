@@ -41,7 +41,7 @@ for file in ${nonext_prj_files[@]}; do
 	nonext_prj_count=0
 	nonext_nnxt_count=0
 	nonext_file_full_label=""
-	[[ ! -n  $NONEXT_FILE_LABEL ]] && nonext_file_full_label=" $NONEXT_FILE_LABEL${file##*/}"
+	[[ -n  $NONEXT_FILE_LABEL ]] && nonext_file_full_label=" $NONEXT_FILE_LABEL${file##*/}"
 	while read; do
 
 		# get priority for this line
