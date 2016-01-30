@@ -80,4 +80,4 @@ for file in ${nonext_prj_files[@]}; do
 	echo --
 	echo $(getPrefix $file): $nonext_nnxt_count of $nonext_prj_count projects have no next action 
 done
-echo $NONEXT_OUTPUT_FILE updated
+echo $TODO_FILE updated
