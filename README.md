@@ -34,7 +34,7 @@ TEST: 3 of 3 projects have no next action
 $ t ls
 3 (A) +tps-report file:test.prj.txt Choose Next Action
 1 (B) +adopt-puppy file:test.prj.txt Choose Next Action
-2 (B) +buy-leash file:test.prj.txt Choose Next Actio
+2 (B) +buy-leash file:test.prj.txt Choose Next Action
 --
 TODO: 3 of 3 tasks shown
 
